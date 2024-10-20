@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Stake from "./pages/Stake";
 import Dice from "./pages/Dice";
@@ -17,6 +18,14 @@ import "./App.css";
 const queryClient = new QueryClient();
 
 function App() {
+  useEffect(() => {
+    if (!localStorage.getItem("isEnabledAnime"))
+      localStorage.setItem("isEnabledAnime", "true");
+
+    if (!localStorage.getItem("isEnabledSound"))
+      localStorage.setItem("isEnabledSound", "true");
+  }, []);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

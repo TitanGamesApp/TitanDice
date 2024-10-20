@@ -15,7 +15,7 @@ export default function Burn() {
     },
     {
       title: "Total Burned",
-      amt: Number(totalBurned).toString(),
+      amt: (Number(totalBurned) / decimals).toString(),
     },
     {
       title: "Total Liquidity",
@@ -23,7 +23,7 @@ export default function Burn() {
     },
     {
       title: "My Burned",
-      amt: Number(userBurned).toString(),
+      amt: (Number(userBurned) / decimals).toString(),
     },
   ];
 

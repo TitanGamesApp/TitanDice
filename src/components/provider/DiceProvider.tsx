@@ -337,7 +337,7 @@ export const DiceProvider = ({ children }: DiceProviderProps) => {
   } = useReadContract({
     abi: TitanGamesStakingABI,
     address: TitanGamesStakingContract,
-    functionName: "stakers",
+    functionName: "getStakers",
     query: { enabled: isEnabled },
   });
 

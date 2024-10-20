@@ -1,9 +1,5 @@
-import {
-  useAccount,
-  usePublicClient,
-  useReadContract,
-  useWriteContract,
-} from "wagmi";
+import { useEffect, useState } from "react";
+import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import Header from "../components/common/Header";
 import StakeCard from "../components/stake/StakeCard";
 import UnStakeCard from "../components/stake/UnStakeCard";
@@ -29,46 +25,55 @@ export default function Stake() {
     refetchStake,
   } = useDice();
 
-  let unclaimedRewards = 0,
-    estimatedPayout = 0;
+  const [unclaimedRewards, setUnclaimedRewards] = useState<number>(0);
+  const [estimatedPayout, setEstimatedPayout] = useState<number>(0);
 
-  const getUnclaimedReward = async () => {
-    try {
-      if (!contractBalance || !totalStaked) return;
-      const rewardPool = contractBalance - totalStaked;
+  useEffect(() => {
+    let unclaimedRewardsTemp = 0,
+      estimatedPayoutTemp = 0;
+    const getUnclaimedReward = async () => {
+      try {
+        if (!contractBalance || !totalStaked || !publicClient) return;
+        const rewardPool = Number(contractBalance) - Number(totalStaked);
 
-      for (let i = 0; i < stakers.length; i++) {
-        const temp = useReadContract({
-          abi: TitanGamesStakingABI,
-          address: TitanGamesStakingContract,
-          functionName: "userRewards",
-          args: [stakers[i]],
-        });
-
-        unclaimedRewards += Number(temp.data);
-
-        if (rewardPool) {
-          const temp_ = useReadContract({
+        for (let i = 0; i < stakers.length; i++) {
+          const temp = await publicClient.readContract({
             abi: TitanGamesStakingABI,
             address: TitanGamesStakingContract,
-            functionName: "userStakes",
+            functionName: "userRewards",
             args: [stakers[i]],
           });
 
-          if (Number(temp_.data) > 0) {
-            estimatedPayout += (Number(temp_.data) * rewardPool) / totalStaked;
+          unclaimedRewardsTemp += Number(temp);
+
+          if (rewardPool) {
+            const temp_ = await publicClient.readContract({
+              abi: TitanGamesStakingABI,
+              address: TitanGamesStakingContract,
+              functionName: "userStakes",
+              args: [stakers[i]],
+            });
+
+            if (Number(temp_) > 0) {
+              estimatedPayoutTemp +=
+                (Number(temp_) * Number(rewardPool)) / Number(totalStaked);
+            }
           }
         }
-      }
-    } catch (error) {
-      console.error("Error during getting unclaimed rewards: ", error);
-    }
-  };
 
-  if (stakers && stakers.length > 0) {
-    // Calculate Unclaimed Rewards and Estimated Next Payout
-    getUnclaimedReward();
-  }
+        if (unclaimedRewardsTemp !== 0)
+          setUnclaimedRewards(unclaimedRewardsTemp);
+        if (estimatedPayoutTemp !== 0) setEstimatedPayout(estimatedPayoutTemp);
+      } catch (error) {
+        console.error("Error during getting unclaimed rewards: ", error);
+      }
+    };
+
+    if (stakers && stakers.length > 0) {
+      // Calculate Unclaimed Rewards and Estimated Next Payout
+      getUnclaimedReward();
+    }
+  }, [contractBalance, totalStaked, stakers]);
 
   let timeCaption;
   if (
@@ -95,7 +100,7 @@ export default function Stake() {
     },
     {
       title: "Unclaimed Rewards",
-      amt: unclaimedRewards,
+      amt: unclaimedRewards / decimals,
     },
     {
       title: "Next Payout in",
@@ -103,7 +108,7 @@ export default function Stake() {
     },
     {
       title: "Estimated Next Payout",
-      amt: estimatedPayout,
+      amt: estimatedPayout / decimals,
     },
   ];
 
